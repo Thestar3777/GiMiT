@@ -16,7 +16,7 @@ function ArrowIcon() {
 function Brand({ light = false, onClick }) {
   return (
     <button className={`brand ${light ? 'brand--light' : ''}`} onClick={onClick} type="button">
-      <span>STORYCRAFT</span>
+      <span>SKETCHCRAFT</span>
     </button>
   )
 }
