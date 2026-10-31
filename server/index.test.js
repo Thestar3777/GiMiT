@@ -39,6 +39,24 @@ test('HTTP contract and invalid requests', async (t) => {
   assert.deepEqual(await generated.json(), config)
   const { analyzeImage } = await import('./gemma.js')
   const file = { mimetype: 'image/png', buffer: Buffer.from('mock image') }
+  const sceneConfig = {
+    ...config,
+    character: 'A rider on a pink creature',
+    theme: 'A lush forest with tall trees',
+    playerColor: '#FF88BB',
+    obstacleColor: '#884422',
+  }
+  modelText = JSON.stringify({ ...sceneConfig, playerSpriteUrl: 'https://example.invalid/upload.png' })
+  assert.deepEqual(await analyzeImage(file), sceneConfig)
+  modelText = JSON.stringify({ character: ' ', theme: '', title: 123 })
+  const defaults = await analyzeImage(file)
+  assert.equal(defaults.character, 'hero')
+  assert.equal(defaults.theme, 'fantasy')
+  assert.equal(defaults.title, 'Drawing Adventure')
+  for (const invalid of ['null', '[]', '"forest"']) {
+    modelText = invalid
+    await assert.rejects(() => analyzeImage(file), /configuration object/)
+  }
   modelText = '```json\n' + JSON.stringify({ gameType: 'runner', title: 'x'.repeat(200), playerColor: 'green', collectibleCount: 99, extra: true }) + '\n```'
   const normalized = await analyzeImage(file)
   assert.equal(normalized.gameType, 'platformer')
