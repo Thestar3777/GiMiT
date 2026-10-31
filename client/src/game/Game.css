@@ -1,0 +1,70 @@
+.phaser-game {
+  width: min(1180px, 100%);
+  margin: 34px auto 24px;
+}
+
+.phaser-game__canvas {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #0c1746;
+  border: 10px solid white;
+  border-radius: 30px;
+  box-shadow: 0 24px 60px rgba(25, 70, 120, 0.2);
+}
+
+.phaser-game__canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.phaser-game__instructions {
+  margin: 14px 0 0;
+  color: #3e4b69;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  text-align: center;
+}
+
+.phaser-game__touch-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.phaser-game__touch-controls button {
+  min-width: 78px;
+  min-height: 48px;
+  padding: 0 18px;
+  color: white;
+  font-weight: 900;
+  background: #2156f5;
+  border: 0;
+  border-radius: 12px;
+  touch-action: none;
+  user-select: none;
+}
+
+.phaser-game__empty {
+  display: grid;
+  width: min(900px, 100%);
+  min-height: 360px;
+  margin: 34px auto;
+  padding: 32px;
+  place-items: center;
+  color: white;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  text-align: center;
+  background: #0c1746;
+  border: 8px solid white;
+  border-radius: 28px;
+}
+
+@media (max-width: 720px) {
+  .phaser-game__canvas { border-width: 6px; border-radius: 20px; }
+  .phaser-game__instructions { font-size: 12px; }
+  .phaser-game__touch-controls button { min-width: 68px; min-height: 44px; padding: 0 14px; }
+}
