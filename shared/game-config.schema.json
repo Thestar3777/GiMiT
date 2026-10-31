@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Game configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "gameType",
+    "title",
+    "character",
+    "theme",
+    "backgroundColor",
+    "playerColor",
+    "obstacleColor",
+    "collectibleColor",
+    "collectibleCount",
+    "audioPrompt"
+  ],
+  "properties": {
+    "gameType": { "type": "string", "const": "platformer" },
+    "title": { "type": "string", "minLength": 1 },
+    "character": { "type": "string", "minLength": 1 },
+    "theme": { "type": "string", "minLength": 1 },
+    "backgroundColor": { "$ref": "#/$defs/color" },
+    "playerColor": { "$ref": "#/$defs/color" },
+    "obstacleColor": { "$ref": "#/$defs/color" },
+    "collectibleColor": { "$ref": "#/$defs/color" },
+    "collectibleCount": { "type": "integer", "minimum": 0 },
+    "audioPrompt": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+  }
+}
