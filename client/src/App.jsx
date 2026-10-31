@@ -117,9 +117,8 @@ function AppHeader({ activeStep, onHome, onUpload, onGame }) {
   )
 }
 
-function UploadDropzone({ error, file, previewUrl, onFile }) {
+function UploadDropzone({ error, file, previewUrl, onFile, onGenerate }) {
   const inputRef = useRef(null)
-  const cameraInputRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
 
   const acceptDrop = (event) => {
@@ -158,11 +157,10 @@ function UploadDropzone({ error, file, previewUrl, onFile }) {
         )}
       </div>
       <input accept="image/jpeg,image/png,image/webp" className="visually-hidden" onChange={(event) => onFile(event.target.files[0])} ref={inputRef} type="file" />
-      <input accept="image/jpeg,image/png,image/webp" capture="environment" className="visually-hidden" onChange={(event) => onFile(event.target.files[0])} ref={cameraInputRef} type="file" />
       {error && <p className="upload-error" role="alert">{error}</p>}
       <div className="upload-actions">
         <button className="upload-action upload-action--primary" onClick={() => inputRef.current?.click()} type="button">BROWSE FILES</button>
-        <button className="upload-action upload-action--camera" onClick={() => cameraInputRef.current?.click()} type="button">TAKE PHOTO WITH CAMERA</button>
+        <PrimaryButton className="upload-action generate-button" disabled={!file} onClick={onGenerate}>GENERATE MY GAME</PrimaryButton>
       </div>
     </>
   )
@@ -211,8 +209,7 @@ function UploadScreen({ embedded = false, file, previewUrl, error, onFile, onGen
         {!embedded && <AppHeader activeStep="upload" onGame={onGame} onHome={onHome} onUpload={() => {}} />}
         <div className="upload-content">
           <h1>UPLOAD DRAWING</h1>
-          <UploadDropzone error={error} file={file} onFile={onFile} previewUrl={previewUrl} />
-          <PrimaryButton className="generate-button" disabled={!file} onClick={onGenerate}>GENERATE MY GAME</PrimaryButton>
+          <UploadDropzone error={error} file={file} onFile={onFile} onGenerate={onGenerate} previewUrl={previewUrl} />
         </div>
       </section>
       <TipsPanel />
