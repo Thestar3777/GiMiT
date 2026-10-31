@@ -48,6 +48,8 @@ test('HTTP contract and invalid requests', async (t) => {
   }
   modelText = JSON.stringify({ ...sceneConfig, playerSpriteUrl: 'https://example.invalid/upload.png' })
   assert.deepEqual(await analyzeImage(file), sceneConfig)
+  modelText = JSON.stringify({ ...sceneConfig, soundEffects: { collect: 'Forest sparkle', hit: 'Leafy thud', win: 'Forest victory', invalid: 'ignored' } })
+  assert.deepEqual((await analyzeImage(file)).soundEffects, { collect: 'Forest sparkle', hit: 'Leafy thud', win: 'Forest victory' })
   modelText = JSON.stringify({ character: ' ', theme: '', title: 123 })
   const defaults = await analyzeImage(file)
   assert.equal(defaults.character, 'hero')
@@ -73,6 +75,11 @@ test('HTTP contract and invalid requests', async (t) => {
   assert.equal(audio.status, 200)
   assert.equal(audio.headers.get('content-type'), 'audio/mpeg')
   assert.equal(await audio.text(), 'ID3mock')
+  const themedAudio = await fetch(url + '/api/audio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ gameConfig: config, event: 'hit' }) })
+  assert.equal(themedAudio.status, 200)
+  assert.equal(themedAudio.headers.get('x-audio-provider'), 'ElevenLabs')
+  assert.equal(themedAudio.headers.get('x-audio-model'), 'eleven_text_to_sound_v2')
+
   for (const [path, options, status] of [
     ['/api/generate', { method: 'POST', body: new FormData() }, 400],
     ['/api/generate', { method: 'POST', body: '{}' }, 400],

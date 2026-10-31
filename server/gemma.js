@@ -51,7 +51,7 @@ This request performs scene analysis only. Do not return image data, crop data,
 asset URLs, or the uploaded image as a character sprite. Do not claim to have
 extracted or removed the background from any subject.
 
-Return ONLY a JSON object with these exact fields:
+Return ONLY a JSON object with these required fields (and optional soundEffects):
 gameType, title, character, theme, backgroundColor,
 playerColor, obstacleColor, collectibleColor,
 collectibleCount, audioPrompt.
@@ -61,6 +61,8 @@ Rules:
 - Colors must be valid 6-digit hex codes.
 - collectibleCount must be between 3 and 8.
 - audioPrompt should describe one short game sound.
+- Optionally include soundEffects with collect, hit, and win string prompts.
+  Each describes one distinct short sound fitting the character and environment.
 - No Markdown or explanation.
 `;
 
@@ -113,6 +115,16 @@ Rules:
     result.collectibleCount = Math.max(
       3, Math.min(8, data.collectibleCount)
     );
+  }
+
+  if (data.soundEffects && typeof data.soundEffects === "object" && !Array.isArray(data.soundEffects)) {
+    const soundEffects = {};
+    for (const event of ["collect", "hit", "win"]) {
+      if (typeof data.soundEffects[event] === "string" && data.soundEffects[event].trim()) {
+        soundEffects[event] = data.soundEffects[event].trim().slice(0, 500);
+      }
+    }
+    if (Object.keys(soundEffects).length) result.soundEffects = soundEffects;
   }
 
   return result;

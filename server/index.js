@@ -4,7 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import multer from "multer";
 import { analyzeImage } from "./gemma.js";
-import { generateAudio } from "./audio.js";
+import { generateAudio, soundRequest } from "./audio.js";
 
 dotenv.config();
 
@@ -37,24 +37,24 @@ app.post("/api/generate", upload.single("image"), async (req, res) => {
     const game = await analyzeImage(req.file);
     res.json(game);
   } catch (error) {
-    console.error("Gemma error:", error);
+    console.error("Gemma error:", error.message);
     res.status(502).json({ error: "AI generation failed" });
   }
 });
 
 app.post("/api/audio", async (req, res) => {
   try {
-    const text = req.body?.text;
-    if (typeof text !== "string" || !text.trim()) {
-      return res.status(400).json({ error: "Text required" });
-    }
-
-    const audio = await generateAudio(text);
+    const { text, duration } = soundRequest(req.body);
+    const audio = await generateAudio(text, { duration });
     res.set("Content-Type", "audio/mpeg");
+    res.set("X-Audio-Provider", "ElevenLabs");
+    res.set("X-Audio-Model", "eleven_text_to_sound_v2");
+    res.set("Cache-Control", "private, no-store");
     res.send(audio);
   } catch (error) {
-    console.error("Audio error:", error);
-    res.status(502).json({ error: "Audio generation failed" });
+    console.error("Audio error:", error.message);
+    if (error.retryAfter) res.set("Retry-After", error.retryAfter);
+    res.status(error.status || 502).json({ error: error.message || "Audio generation failed" });
   }
 });
 
