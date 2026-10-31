@@ -1,0 +1,11 @@
+{
+  "name": "gimit-server",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env index.js",
+    "dev": "node --env-file-if-exists=.env --watch index.js",
+    "test": "node --test"
+  }
+}

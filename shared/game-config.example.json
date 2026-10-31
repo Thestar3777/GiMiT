@@ -1,0 +1,12 @@
+{
+  "gameType": "platformer",
+  "title": "Dinosaur Adventure",
+  "character": "dinosaur",
+  "theme": "forest",
+  "backgroundColor": "#87CEEB",
+  "playerColor": "#58B957",
+  "obstacleColor": "#765443",
+  "collectibleColor": "#FFD700",
+  "collectibleCount": 5,
+  "audioPrompt": "Playful arcade coin collection sound"
+}
