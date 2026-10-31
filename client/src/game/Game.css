@@ -68,3 +68,7 @@
   .phaser-game__instructions { font-size: 12px; }
   .phaser-game__touch-controls button { min-width: 68px; min-height: 44px; padding: 0 14px; }
 }
+
+.phaser-game__audio { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.phaser-game__audio button { padding: 10px 16px; border-radius: 12px; border: 1px solid #2156f5; background: white; color: #183ca0; cursor: pointer; }
+.phaser-game__audio small { color: #3e4b69; }

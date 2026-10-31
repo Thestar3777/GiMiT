@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env index.js",
     "dev": "node --env-file-if-exists=.env --watch index.js",
-    "test": "node --test index.test.js audio.test.js game-audio.test.js"
+    "test": "node --test index.test.js audio.test.js game-audio.test.js deployment.test.js"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

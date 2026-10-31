@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+server/.env
+server/.env.*
+!server/.env.example
+server/test
+server/test.*
+server/test-*.js
+server/*.test.js
+server/verify-audio.js

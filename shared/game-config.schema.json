@@ -16,18 +16,68 @@
     "audioPrompt"
   ],
   "properties": {
-    "gameType": { "type": "string", "const": "platformer" },
-    "title": { "type": "string", "minLength": 1 },
-    "character": { "type": "string", "minLength": 1 },
-    "theme": { "type": "string", "minLength": 1 },
-    "backgroundColor": { "$ref": "#/$defs/color" },
-    "playerColor": { "$ref": "#/$defs/color" },
-    "obstacleColor": { "$ref": "#/$defs/color" },
-    "collectibleColor": { "$ref": "#/$defs/color" },
-    "collectibleCount": { "type": "integer", "minimum": 0 },
-    "audioPrompt": { "type": "string", "minLength": 1 }
+    "gameType": {
+      "type": "string",
+      "const": "platformer"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "character": {
+      "type": "string",
+      "minLength": 1
+    },
+    "theme": {
+      "type": "string",
+      "minLength": 1
+    },
+    "backgroundColor": {
+      "$ref": "#/$defs/color"
+    },
+    "playerColor": {
+      "$ref": "#/$defs/color"
+    },
+    "obstacleColor": {
+      "$ref": "#/$defs/color"
+    },
+    "collectibleColor": {
+      "$ref": "#/$defs/color"
+    },
+    "collectibleCount": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "audioPrompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "soundEffects": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "collect": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "hit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "win": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    }
   },
   "$defs": {
-    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" }
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    }
   }
 }

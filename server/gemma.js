@@ -1,10 +1,6 @@
 import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
-});
-
 const fallback = {
   gameType: "platformer",
   title: "Drawing Adventure",
@@ -19,6 +15,9 @@ const fallback = {
 };
 
 export async function analyzeImage(file) {
+  // Keep health/audio available even when image-generation credentials are absent.
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
   const prompt = `
 Analyze the visible subjects in this image and create a simple 2D platformer concept.
 

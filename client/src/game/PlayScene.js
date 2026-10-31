@@ -213,7 +213,9 @@ export default class PlayScene extends Phaser.Scene {
   }
 
   collectItem(_player, collectible) {
+    if (this.hasWon || !collectible.active) return
     collectible.destroy()
+    this.game.events.emit('game-sound', 'collect')
     this.score += 1
     this.scoreText.setText(`SCORE  ${this.score} / ${this.totalCollectibles}`)
     if (this.score >= this.totalCollectibles) this.showWinState()
@@ -221,6 +223,7 @@ export default class PlayScene extends Phaser.Scene {
 
   hitObstacle() {
     if (!this.player?.active || this.hasWon) return
+    this.game.events.emit('game-sound', 'hit')
     this.player.setVelocity(0, 0).setPosition(88, 445)
     this.cameras.main.shake(120, 0.008)
     this.player.setTint(this.colors.obstacle)
@@ -228,7 +231,9 @@ export default class PlayScene extends Phaser.Scene {
   }
 
   showWinState() {
+    if (this.hasWon) return
     this.hasWon = true
+    this.game.events.emit('game-sound', 'win')
     this.player.setVelocity(0, 0)
     this.physics.pause()
     this.add.rectangle(LEVEL_WIDTH / 2, LEVEL_HEIGHT / 2, 520, 250, 0x0c1746, 0.94).setDepth(40)

@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import renderedScene from './assets/storycraft-rendered.jpeg'
 import sketchScene from './assets/storycraft-sketch.jpeg'
 import Game from './game/Game.jsx'
-import { createMockGameConfig, DEFAULT_MOCK_GAME_CONFIG } from './game/mockGameConfig.js'
+import { DEFAULT_MOCK_GAME_CONFIG } from './game/mockGameConfig.js'
 import './App.css'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024
-const VALID_FILE_TYPES = ['image/jpeg', 'image/png']
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+const VALID_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const EMPTY_GAME_ASSETS = Object.freeze({ characterSpriteUrl: null, backgroundImageUrl: null })
 
 function ArrowIcon() {
@@ -151,14 +151,14 @@ function UploadDropzone({ error, file, previewUrl, onFile }) {
               <h2>UPLOAD YOUR<br />DRAWING</h2>
               <span className="camera-symbol" aria-hidden="true">●</span>
               <p>Drag and drop your sketch here, or <u>browse files</u></p>
-              <small>Supports JPG, PNG, up to 10MB</small>
+              <small>Supports JPG, PNG, WebP, up to 5MB</small>
             </div>
             <img className="upload-dropzone__example" src={sketchScene} alt="Example colorful drawing" />
           </>
         )}
       </div>
-      <input accept="image/jpeg,image/png" className="visually-hidden" onChange={(event) => onFile(event.target.files[0])} ref={inputRef} type="file" />
-      <input accept="image/jpeg,image/png" capture="environment" className="visually-hidden" onChange={(event) => onFile(event.target.files[0])} ref={cameraInputRef} type="file" />
+      <input accept="image/jpeg,image/png,image/webp" className="visually-hidden" onChange={(event) => onFile(event.target.files[0])} ref={inputRef} type="file" />
+      <input accept="image/jpeg,image/png,image/webp" capture="environment" className="visually-hidden" onChange={(event) => onFile(event.target.files[0])} ref={cameraInputRef} type="file" />
       {error && <p className="upload-error" role="alert">{error}</p>}
       <div className="upload-actions">
         <button className="upload-action upload-action--primary" onClick={() => inputRef.current?.click()} type="button">BROWSE FILES</button>
@@ -275,29 +275,49 @@ function App() {
 
   useEffect(() => {
     if (screen !== 'loading') return undefined
-    const timer = window.setTimeout(() => {
+    const controller = new AbortController()
+    let active = true
+    const generate = async () => {
       if (!file || !previewUrl) {
         setError('We could not generate the game. Please upload your drawing again.')
         setScreen('upload')
         return
       }
-
-      // The source upload stays separate from generated gameplay assets.
-      // Person 2 can replace this with the asset URLs returned by /api/generate.
-      setGameAssets(EMPTY_GAME_ASSETS)
-      setScreen('game')
-    }, 2200)
-    return () => window.clearTimeout(timer)
+      try {
+        const form = new FormData()
+        form.append('image', file)
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/generate`, {
+          method: 'POST', body: form, signal: controller.signal,
+        })
+        const config = await response.json()
+        if (!response.ok) throw new Error(config.error || 'Game generation failed. Please try again.')
+        if (!config || config.gameType !== 'platformer') throw new Error('The server returned an invalid game configuration.')
+        if (!active) return
+        setGameConfig(config)
+        // The upload remains separate from optional extracted gameplay assets.
+        setGameAssets({
+          characterSpriteUrl: config.assets?.characterSpriteUrl || config.assets?.playerSpriteUrl || null,
+          backgroundImageUrl: config.assets?.backgroundImageUrl || null,
+        })
+        setScreen('game')
+      } catch (error) {
+        if (!active) return
+        setError(error.message || 'Game generation failed. Please try again.')
+        setScreen('upload')
+      }
+    }
+    void generate()
+    return () => { active = false; controller.abort() }
   }, [file, previewUrl, screen])
 
   const handleFile = (nextFile) => {
     if (!nextFile) return
     if (!VALID_FILE_TYPES.includes(nextFile.type)) {
-      setError('Please choose a JPG or PNG image.')
+      setError('Please choose a JPG, PNG, or WebP image.')
       return
     }
     if (nextFile.size > MAX_FILE_SIZE) {
-      setError('That image is larger than 10MB. Please choose a smaller file.')
+      setError('That image is larger than 5MB. Please choose a smaller file.')
       return
     }
     const nextPreviewUrl = URL.createObjectURL(nextFile)
@@ -306,13 +326,12 @@ function App() {
       if (previewUrl) URL.revokeObjectURL(previewUrl)
       setFile(nextFile)
       setPreviewUrl(nextPreviewUrl)
-      setGameConfig(createMockGameConfig(nextFile))
       setGameAssets(EMPTY_GAME_ASSETS)
       setError('')
     }
     image.onerror = () => {
       URL.revokeObjectURL(nextPreviewUrl)
-      setError('That file is not a readable image. Please choose another JPG or PNG.')
+      setError('That file is not a readable image. Please choose another JPG, PNG, or WebP.')
     }
     image.src = nextPreviewUrl
   }
