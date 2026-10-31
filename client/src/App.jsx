@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import renderedScene from './assets/storycraft-rendered.jpeg'
 import sketchScene from './assets/storycraft-sketch.jpeg'
+import Game from './game/Game.jsx'
+import { createMockGameConfig, DEFAULT_MOCK_GAME_CONFIG } from './game/mockGameConfig.js'
 import './App.css'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 const VALID_FILE_TYPES = ['image/jpeg', 'image/png']
+const EMPTY_GAME_ASSETS = Object.freeze({ characterSpriteUrl: null, backgroundImageUrl: null })
 
 function ArrowIcon() {
   return <span className="arrow-icon" aria-hidden="true">→</span>
@@ -83,20 +86,20 @@ function ImageComparisonSlider() {
 
 function LandingScreen({ onStart }) {
   return (
-    <main className="landing-screen">
+    <section className="landing-screen" aria-labelledby="hero-heading">
       <ImageComparisonSlider />
       <header className="landing-header">
         <Brand light onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
         <PrimaryButton onClick={onStart}>CREATE YOUR GAME</PrimaryButton>
       </header>
-      <section className="hero-copy" aria-labelledby="hero-heading">
+      <div className="hero-copy">
         <h1 id="hero-heading">LET YOUR<br />IMAGINATION<br /><span>CREATE.</span></h1>
         <p>Draw your game on paper, snap a photo and upload it — our AI turns your drawing into a game you can actually play.</p>
         <div className="hero-actions">
           <PrimaryButton onClick={onStart}>CREATE A GAME</PrimaryButton>
         </div>
-      </section>
-    </main>
+      </div>
+    </section>
   )
 }
 
@@ -196,11 +199,16 @@ function ProgressSteps({ active }) {
   )
 }
 
-function UploadScreen({ file, previewUrl, error, onFile, onGenerate, onHome, onGame }) {
+function UploadScreen({ embedded = false, file, previewUrl, error, onFile, onGenerate, onHome, onGame }) {
+  const Root = embedded ? 'section' : 'main'
+
   return (
-    <main className="workspace-screen">
+    <Root
+      className={`workspace-screen ${embedded ? 'workspace-screen--embedded' : ''}`}
+      id={embedded ? 'upload-section' : undefined}
+    >
       <section className="workspace-main">
-        <AppHeader activeStep="upload" onGame={onGame} onHome={onHome} onUpload={() => {}} />
+        {!embedded && <AppHeader activeStep="upload" onGame={onGame} onHome={onHome} onUpload={() => {}} />}
         <div className="upload-content">
           <h1>UPLOAD DRAWING</h1>
           <UploadDropzone error={error} file={file} onFile={onFile} previewUrl={previewUrl} />
@@ -209,7 +217,7 @@ function UploadScreen({ file, previewUrl, error, onFile, onGenerate, onHome, onG
       </section>
       <TipsPanel />
       <footer className="workspace-footer"><ProgressSteps active={1} /></footer>
-    </main>
+    </Root>
   )
 }
 
@@ -231,31 +239,18 @@ function LoadingScreen({ previewUrl, onHome, onUpload }) {
   )
 }
 
-function GamePlaceholder({ previewUrl }) {
-  return (
-    <div className="game-placeholder" id="game" aria-label="Phaser game integration area">
-      {previewUrl && <img src={previewUrl} alt="Artwork used to generate this game" />}
-      <div className="game-placeholder__overlay">
-        <span>PHASER GAME AREA</span>
-        <strong>YOUR ADVENTURE IS READY!</strong>
-        <p>The playable game canvas will mount here.</p>
-      </div>
-    </div>
-  )
-}
-
-function GameScreen({ previewUrl, onHome, onRestart }) {
+function GameScreen({ backgroundImageUrl, characterSpriteUrl, gameConfig, onHome, onRestart }) {
+  const fullTitle = typeof gameConfig.title === 'string' && gameConfig.title.trim() ? gameConfig.title.trim() : 'The Drawing Quest'
+  const displayTitle = fullTitle.length > 64 ? `${fullTitle.slice(0, 63).trimEnd()}…` : fullTitle
   return (
     <main className="simple-screen game-screen">
       <AppHeader activeStep="game" onGame={() => {}} onHome={onHome} onUpload={onRestart} />
       <section className="game-content">
-        <p className="eyebrow">YOUR DRAWING CAME TO LIFE</p>
-        <h1>READY, SET, PLAY!</h1>
-        <GamePlaceholder previewUrl={previewUrl} />
-        <div className="game-meta">
-          <div><span>SCORE</span><strong>000</strong></div>
-          <div><span>STATUS</span><strong>READY</strong></div>
-          <PrimaryButton onClick={onRestart}>CREATE ANOTHER</PrimaryButton>
+        <p className="eyebrow">{gameConfig.theme}</p>
+        <h1 title={fullTitle}>{displayTitle}</h1>
+        <Game backgroundImageUrl={backgroundImageUrl} characterSpriteUrl={characterSpriteUrl} gameConfig={gameConfig} />
+        <div className="game-actions">
+          <PrimaryButton onClick={onRestart}>UPLOAD ANOTHER DRAWING</PrimaryButton>
         </div>
         <ProgressSteps active={3} />
       </section>
@@ -271,6 +266,8 @@ function App() {
   const [file, setFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [error, setError] = useState('')
+  const [gameConfig, setGameConfig] = useState(DEFAULT_MOCK_GAME_CONFIG)
+  const [gameAssets, setGameAssets] = useState(EMPTY_GAME_ASSETS)
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
@@ -278,9 +275,20 @@ function App() {
 
   useEffect(() => {
     if (screen !== 'loading') return undefined
-    const timer = window.setTimeout(() => setScreen('game'), 2200)
+    const timer = window.setTimeout(() => {
+      if (!file || !previewUrl) {
+        setError('We could not generate the game. Please upload your drawing again.')
+        setScreen('upload')
+        return
+      }
+
+      // The source upload stays separate from generated gameplay assets.
+      // Person 2 can replace this with the asset URLs returned by /api/generate.
+      setGameAssets(EMPTY_GAME_ASSETS)
+      setScreen('game')
+    }, 2200)
     return () => window.clearTimeout(timer)
-  }, [screen])
+  }, [file, previewUrl, screen])
 
   const handleFile = (nextFile) => {
     if (!nextFile) return
@@ -292,14 +300,30 @@ function App() {
       setError('That image is larger than 10MB. Please choose a smaller file.')
       return
     }
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setFile(nextFile)
-    setPreviewUrl(URL.createObjectURL(nextFile))
-    setError('')
+    const nextPreviewUrl = URL.createObjectURL(nextFile)
+    const image = new Image()
+    image.onload = () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+      setFile(nextFile)
+      setPreviewUrl(nextPreviewUrl)
+      setGameConfig(createMockGameConfig(nextFile))
+      setGameAssets(EMPTY_GAME_ASSETS)
+      setError('')
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(nextPreviewUrl)
+      setError('That file is not a readable image. Please choose another JPG or PNG.')
+    }
+    image.src = nextPreviewUrl
   }
 
   const generateGame = () => {
-    if (!file) return
+    if (!file || !previewUrl) {
+      setError('Please upload a valid drawing before generating your game.')
+      setScreen('upload')
+      return
+    }
+    setError('')
     setScreen('loading')
   }
 
@@ -307,15 +331,37 @@ function App() {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setFile(null)
     setPreviewUrl('')
+    setGameConfig(DEFAULT_MOCK_GAME_CONFIG)
+    setGameAssets(EMPTY_GAME_ASSETS)
     setError('')
     setScreen('upload')
   }
 
-  if (screen === 'home') return <LandingScreen onStart={() => setScreen('upload')} />
-  if (screen === 'loading') return <LoadingScreen onHome={() => setScreen('home')} onUpload={() => setScreen('upload')} previewUrl={previewUrl} />
-  if (screen === 'game') return <GameScreen onHome={() => setScreen('home')} onRestart={restart} previewUrl={previewUrl} />
+  if (screen === 'home') {
+    const scrollToUpload = () => {
+      document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
 
-  return <UploadScreen error={error} file={file} onFile={handleFile} onGame={() => file && setScreen('game')} onGenerate={generateGame} onHome={() => setScreen('home')} previewUrl={previewUrl} />
+    return (
+      <main className="home-page">
+        <LandingScreen onStart={scrollToUpload} />
+        <UploadScreen
+          embedded
+          error={error}
+          file={file}
+          onFile={handleFile}
+          onGame={generateGame}
+          onGenerate={generateGame}
+          onHome={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          previewUrl={previewUrl}
+        />
+      </main>
+    )
+  }
+  if (screen === 'loading') return <LoadingScreen onHome={() => setScreen('home')} onUpload={() => setScreen('upload')} previewUrl={previewUrl} />
+  if (screen === 'game') return <GameScreen {...gameAssets} gameConfig={gameConfig} onHome={() => setScreen('home')} onRestart={restart} />
+
+  return <UploadScreen error={error} file={file} onFile={handleFile} onGame={generateGame} onGenerate={generateGame} onHome={() => setScreen('home')} previewUrl={previewUrl} />
 }
 
 export default App
